@@ -1,0 +1,145 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "type": "object",
+  "required": [
+    "meta",
+    "season_params",
+    "dow_params",
+    "hour_params",
+    "events",
+    "constraints",
+    "tuning_defaults",
+    "notes"
+  ],
+  "properties": {
+    "meta": {
+      "type": "object",
+      "required": [
+        "medium",
+        "object_type",
+        "assumptions",
+        "params_version",
+        "model_version",
+        "prompt_version"
+      ],
+      "properties": {
+        "medium": { "enum": ["electricity", "gas", "heat", "water"] },
+        "object_type": {
+          "enum": ["skola", "kancelar", "bytovy_dum", "prumysl", "obchod", "bazen"]
+        },
+        "assumptions": { "type": "array", "items": { "type": "string" }, "maxItems": 5 },
+        "params_version": { "const": "v1" },
+        "model_version": { "type": "string", "minLength": 1 },
+        "prompt_version": { "const": "p1" }
+      },
+      "additionalProperties": false
+    },
+    "season_params": {
+      "type": "object",
+      "required": ["winter_bias", "summer_uplift", "vacation_dip", "xmas_spike"],
+      "properties": {
+        "winter_bias": { "type": "number", "minimum": -0.3, "maximum": 0.6 },
+        "summer_uplift": { "type": "number", "minimum": -0.3, "maximum": 0.6 },
+        "vacation_dip": { "type": "number", "minimum": 0, "maximum": 0.9 },
+        "xmas_spike": { "type": "number", "minimum": -0.3, "maximum": 0.6 }
+      },
+      "additionalProperties": false
+    },
+    "dow_params": {
+      "type": "object",
+      "required": ["weekend_floor", "friday_drop", "saturday_boost", "sunday_boost"],
+      "properties": {
+        "weekend_floor": { "type": "number", "minimum": 0, "maximum": 0.3 },
+        "friday_drop": { "type": "number", "minimum": 0, "maximum": 0.3 },
+        "saturday_boost": { "type": "number", "minimum": -0.2, "maximum": 0.6 },
+        "sunday_boost": { "type": "number", "minimum": -0.2, "maximum": 0.6 }
+      },
+      "additionalProperties": false
+    },
+    "hour_params": {
+      "type": "object",
+      "required": [
+        "baseload",
+        "open_hours",
+        "peaks",
+        "dips",
+        "night_setback",
+        "ramp_up_rate",
+        "ramp_down_rate",
+        "weekend_variation"
+      ],
+      "properties": {
+        "baseload": { "type": "number", "minimum": 0, "maximum": 1 },
+        "open_hours": {
+          "type": "array",
+          "items": [
+            { "type": "number", "minimum": 0, "maximum": 23 },
+            { "type": "number", "minimum": 1, "maximum": 24 }
+          ],
+          "minItems": 2,
+          "maxItems": 2
+        },
+        "peaks": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["t", "amp"],
+            "properties": {
+              "t": { "type": "number", "minimum": 0, "maximum": 24 },
+              "amp": { "type": "number", "minimum": -1, "maximum": 1 }
+            }
+          },
+          "maxItems": 6
+        },
+        "dips": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["t", "amp"],
+            "properties": {
+              "t": { "type": "number", "minimum": 0, "maximum": 24 },
+              "amp": { "type": "number", "minimum": -1, "maximum": 1 }
+            }
+          },
+          "maxItems": 6
+        },
+        "night_setback": { "type": "number", "minimum": 0, "maximum": 1 },
+        "ramp_up_rate": { "type": "number", "minimum": 0, "maximum": 0.5 },
+        "ramp_down_rate": { "type": "number", "minimum": 0, "maximum": 0.5 },
+        "weekend_variation": { "type": "number", "minimum": -0.6, "maximum": 0.6 }
+      },
+      "additionalProperties": false
+    },
+    "events": {
+      "type": "object",
+      "required": ["holidays_drop", "vacation_drop"],
+      "properties": {
+        "holidays_drop": { "type": "number", "minimum": 0, "maximum": 0.9 },
+        "vacation_drop": { "type": "number", "minimum": 0, "maximum": 0.9 }
+      },
+      "additionalProperties": false
+    },
+    "constraints": {
+      "type": "object",
+      "required": ["max_hourly_slope", "min_weekend_share"],
+      "properties": {
+        "max_hourly_slope": { "type": "number", "minimum": 0.01, "maximum": 0.5 },
+        "min_weekend_share": { "type": "number", "minimum": 0, "maximum": 0.5 }
+      },
+      "additionalProperties": false
+    },
+    "tuning_defaults": {
+      "type": "object",
+      "required": ["smoothWindow", "anchorBlend", "holidayBaseload", "holidayLikeSunday"],
+      "properties": {
+        "smoothWindow": { "type": "integer", "minimum": 1, "maximum": 23 },
+        "anchorBlend": { "type": "number", "minimum": 0, "maximum": 1 },
+        "holidayBaseload": { "type": "number", "minimum": -0.5, "maximum": 0.5 },
+        "holidayLikeSunday": { "type": "boolean" }
+      },
+      "additionalProperties": false
+    },
+    "notes": { "type": "string" }
+  },
+  "additionalProperties": false
+}

@@ -1,0 +1,133 @@
+{
+  "wd_day": {
+    "dow_params": {
+      "day_drops": {
+        "sat": 0.7,
+        "sun": 0.8
+      }
+    },
+    "hour_params": {
+      "weekend_variation": -0.25
+    }
+  },
+  "weekend_min": {
+    "dow_params": {
+      "day_drops": {
+        "sat": 0.85,
+        "sun": 0.9
+      }
+    },
+    "hour_params": {
+      "weekend_variation": -0.35
+    }
+  },
+  "weekend_eq_wd": {
+    "dow_params": {
+      "day_drops": {
+        "sat": 0.05,
+        "sun": 0.05
+      }
+    },
+    "hour_params": {
+      "weekend_variation": 0
+    }
+  },
+  "school": {
+    "hour_params": {
+      "open_hours": [
+        7,
+        17
+      ],
+      "baseload": 0.26,
+      "night_setback": 0.3,
+      "peaks": [
+        {
+          "t": 7,
+          "amp": 0.16
+        },
+        {
+          "t": 12,
+          "amp": 0.18
+        },
+        {
+          "t": 16,
+          "amp": 0.1
+        }
+      ]
+    },
+    "season_params": {
+      "vacation_dip": 0.75
+    }
+  },
+  "hospital": {
+    "hour_params": {
+      "baseload": 0.4
+    },
+    "dow_params": {
+      "day_drops": {
+        "sat": 0.05,
+        "sun": 0.05
+      }
+    }
+  },
+  "restaurant": {
+    "hour_params": {
+      "open_hours": [
+        10,
+        23
+      ],
+      "peaks": [
+        {
+          "t": 12,
+          "amp": 0.18
+        },
+        {
+          "t": 19,
+          "amp": 0.22
+        }
+      ],
+      "baseload": 0.28
+    }
+  },
+  "industry_3shift": {
+    "hour_params": {
+      "baseload": 0.38
+    },
+    "dow_params": {
+      "day_drops": {
+        "sat": 0.05,
+        "sun": 0.05
+      }
+    }
+  },
+  "summer_vac": {
+    "season_params": {
+      "vacation_dip": 0.6
+    }
+  },
+  "kitchen": {
+    "hour_params": {
+      "peaks": [
+        {
+          "t": 7,
+          "amp": 0.12
+        },
+        {
+          "t": 12,
+          "amp": 0.12
+        }
+      ]
+    }
+  },
+  "weekend_up": {
+    "dow_params": {
+      "day_drops": {
+        "sat": 0.2,
+        "sun": 0.2
+      }
+    },
+    "hour_params": {
+      "weekend_variation": 0.1
+    }
+  }
+}

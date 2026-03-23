@@ -1,0 +1,29 @@
+{
+  "zakladni_skola": [
+    "school",
+    "kitchen",
+    "wd_day",
+    "weekend_min",
+    "summer_vac"
+  ],
+  "nemocnice": [
+    "hospital",
+    "24x7",
+    "water_high",
+    "elec_tech",
+    "weekend_eq_wd"
+  ],
+  "restaurace": [
+    "restaurant",
+    "lunch_peak",
+    "dinner_peak",
+    "weekend_up",
+    "kitchen"
+  ],
+  "prumyslovy_podnik_-_3_smeny": [
+    "industry_3shift",
+    "24x7",
+    "steady_load",
+    "weekend_eq_wd"
+  ]
+}

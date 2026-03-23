@@ -1,0 +1,100 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "AI Params (consumption profile parameters)",
+  "type": "object",
+  "required": ["meta", "season_params", "dow_params", "hour_params"],
+  "properties": {
+    "meta": { "type": "object" },
+    "season_params": {
+      "type": "object",
+      "properties": {
+        "winter_bias": { "type": "number", "minimum": 0, "maximum": 1 },
+        "summer_uplift": { "type": "number", "minimum": -1, "maximum": 1 },
+        "vacation_dip": { "type": "number", "minimum": 0, "maximum": 1 },
+        "xmas_spike": { "type": "number", "minimum": 0, "maximum": 1 }
+      },
+      "additionalProperties": true
+    },
+    "dow_params": {
+      "type": "object",
+      "properties": {
+        "weekend_floor": { "type": "number", "minimum": 0, "maximum": 1 },
+        "friday_drop": { "type": "number", "minimum": 0, "maximum": 1 },
+        "saturday_boost": { "type": "number", "minimum": 0, "maximum": 1 },
+        "sunday_boost": { "type": "number", "minimum": 0, "maximum": 1 },
+        "day_drops": {
+          "type": "object",
+          "properties": {
+            "Mon": { "type": "number", "minimum": 0, "maximum": 1 },
+            "Tue": { "type": "number", "minimum": 0, "maximum": 1 },
+            "Wed": { "type": "number", "minimum": 0, "maximum": 1 },
+            "Thu": { "type": "number", "minimum": 0, "maximum": 1 },
+            "Fri": { "type": "number", "minimum": 0, "maximum": 1 },
+            "Sat": { "type": "number", "minimum": 0, "maximum": 1 },
+            "Sun": { "type": "number", "minimum": 0, "maximum": 1 }
+          },
+          "additionalProperties": false
+        }
+      },
+      "additionalProperties": true
+    },
+    "hour_params": {
+      "type": "object",
+      "properties": {
+        "baseload": { "type": "number", "minimum": 0, "maximum": 1 },
+        "open_hours": {
+          "type": "array",
+          "minItems": 2,
+          "maxItems": 2,
+          "items": { "type": "integer", "minimum": 0, "maximum": 24 }
+        },
+        "peaks": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["t", "amp"],
+            "properties": {
+              "t": { "type": "number", "minimum": 0, "maximum": 24 },
+              "amp": { "type": "number", "minimum": 0, "maximum": 1 }
+            }
+          }
+        },
+        "dips": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["t", "amp"],
+            "properties": {
+              "t": { "type": "number", "minimum": 0, "maximum": 24 },
+              "amp": { "type": "number", "minimum": 0, "maximum": 1 }
+            }
+          }
+        },
+        "night_setback": { "type": "number", "minimum": 0, "maximum": 1 },
+        "ramp_up_rate": { "type": "number", "minimum": 0, "maximum": 1 },
+        "ramp_down_rate": { "type": "number", "minimum": 0, "maximum": 1 },
+        "weekend_variation": { "type": "number", "minimum": -1, "maximum": 1 }
+      },
+      "additionalProperties": true
+    },
+    "events": {
+      "type": "object",
+      "additionalProperties": { "type": "number", "minimum": 0, "maximum": 1 }
+    },
+    "constraints": {
+      "type": "object",
+      "additionalProperties": { "type": "number", "minimum": 0, "maximum": 1 }
+    },
+    "tuning_defaults": {
+      "type": "object",
+      "properties": {
+        "smoothWindow": { "type": "integer", "minimum": 1 },
+        "anchorBlend": { "type": "number", "minimum": 0, "maximum": 1 },
+        "holidayBaseload": { "type": "number", "minimum": -1, "maximum": 1 },
+        "holidayLikeSunday": { "type": "boolean" }
+      },
+      "additionalProperties": true
+    }
+  },
+  "additionalProperties": true
+}

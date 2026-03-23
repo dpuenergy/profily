@@ -1,0 +1,487 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Generátor spotřebních profilů</title>
+
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4/dist/chart.umd.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-dragdata@2.3/dist/chartjs-plugin-dragdata.min.js"></script>
+
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: system-ui, -apple-system, sans-serif;
+      font-size: 14px;
+      background: #f1f5f9;
+      color: #1e293b;
+    }
+    header {
+      background: #1e293b;
+      color: #f8fafc;
+      padding: 13px 24px;
+      font-size: 15px;
+      font-weight: 600;
+      letter-spacing: .02em;
+    }
+    .main { max-width: 1400px; margin: 0 auto; padding: 18px 16px 40px; }
+
+    /* ── Cards ── */
+    .card {
+      background: #fff;
+      border-radius: 10px;
+      box-shadow: 0 1px 3px rgba(0,0,0,.08);
+      padding: 16px 20px;
+      margin-bottom: 14px;
+    }
+    .card-title {
+      font-size: 11px; font-weight: 700;
+      text-transform: uppercase; letter-spacing: .07em;
+      color: #94a3b8; margin-bottom: 10px;
+    }
+
+    /* ── Context bar (medium, unit, annual, year) ── */
+    .ctx-bar {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      align-items: flex-end;
+      margin-bottom: 14px;
+      background: #fff;
+      border-radius: 10px;
+      box-shadow: 0 1px 3px rgba(0,0,0,.08);
+      padding: 12px 20px;
+    }
+    .ctx-field {
+      display: flex;
+      flex-direction: column;
+      gap: 3px;
+      font-size: 11px;
+      font-weight: 600;
+      color: #64748b;
+      text-transform: uppercase;
+      letter-spacing: .05em;
+    }
+    .ctx-field select,
+    .ctx-field input[type="number"],
+    .ctx-field input[type="text"] {
+      padding: 6px 8px;
+      border: 1px solid #cbd5e1;
+      border-radius: 6px;
+      font: inherit;
+      font-size: 13px;
+      background: #fff;
+      color: #1e293b;
+      min-width: 90px;
+    }
+    .ctx-field select:focus,
+    .ctx-field input:focus { outline: 2px solid #3b82f6; border-color: transparent; }
+
+    .annual-wrap { position: relative; }
+    .annual-wrap input { padding-right: 44px; width: 140px; }
+    #unitLabel {
+      position: absolute; right: 9px; top: 50%;
+      transform: translateY(-50%);
+      font-size: 11px; color: #94a3b8; pointer-events: none;
+    }
+
+    /* ── Chat card ── */
+    #chatCard { padding: 14px 20px; }
+
+    .chat-messages {
+      min-height: 60px;
+      max-height: 320px;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      margin-bottom: 10px;
+      padding: 4px 0;
+    }
+    .chat-msg {
+      max-width: 82%;
+      padding: 8px 12px;
+      border-radius: 8px;
+      font-size: 13px;
+      line-height: 1.5;
+      white-space: pre-wrap;
+      word-break: break-word;
+    }
+    .chat-msg--user {
+      align-self: flex-end;
+      background: #3b82f6; color: #fff;
+      border-bottom-right-radius: 2px;
+    }
+    .chat-msg--assistant {
+      align-self: flex-start;
+      background: #f1f5f9; color: #1e293b;
+      border-bottom-left-radius: 2px;
+    }
+    .chat-msg--system {
+      align-self: center;
+      background: #dcfce7; color: #166534;
+      font-size: 12px; border-radius: 6px;
+      padding: 5px 12px; max-width: 100%;
+    }
+    /* Typing indicator */
+    .chat-msg--typing {
+      background: #f1f5f9;
+      align-self: flex-start;
+      padding: 10px 14px;
+    }
+    .chat-msg--typing span {
+      display: inline-block;
+      width: 6px; height: 6px;
+      background: #94a3b8;
+      border-radius: 50%;
+      margin: 0 2px;
+      animation: bounce .9s infinite;
+    }
+    .chat-msg--typing span:nth-child(2) { animation-delay: .15s; }
+    .chat-msg--typing span:nth-child(3) { animation-delay: .30s; }
+    @keyframes bounce { 0%,60%,100% { transform:translateY(0); } 30% { transform:translateY(-5px); } }
+
+    .chat-input-row { display: flex; gap: 8px; align-items: flex-end; }
+    textarea#chatInput {
+      flex: 1; min-height: 44px; max-height: 120px;
+      resize: vertical; padding: 8px 10px;
+      border: 1px solid #cbd5e1; border-radius: 6px;
+      font: inherit; font-size: 13px; line-height: 1.4;
+    }
+    textarea#chatInput:focus { outline: 2px solid #3b82f6; border-color: transparent; }
+    #btnChatSend {
+      padding: 9px 18px;
+      background: #3b82f6; color: #fff;
+      border: none; border-radius: 6px;
+      font: 600 13px/1 inherit; cursor: pointer;
+      white-space: nowrap;
+    }
+    #btnChatSend:hover { background: #2563eb; }
+    #btnChatSend:disabled { background: #93c5fd; cursor: default; }
+    .chat-hint { font-size: 11px; color: #94a3b8; margin-bottom: 8px; }
+
+    /* ── Four charts ── */
+    .charts-row {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 14px;
+      margin-bottom: 14px;
+    }
+    @media (max-width: 1100px) { .charts-row { grid-template-columns: repeat(2, 1fr); } }
+    @media (max-width: 600px)  { .charts-row { grid-template-columns: 1fr; } }
+
+    .chart-card {
+      background: #fff; border-radius: 10px;
+      box-shadow: 0 1px 3px rgba(0,0,0,.08); padding: 14px 16px;
+    }
+    .chart-title {
+      font-size: 11px; font-weight: 700;
+      text-transform: uppercase; letter-spacing: .07em;
+      color: #94a3b8; margin-bottom: 4px;
+    }
+    .chart-hint { font-size: 10px; color: #cbd5e1; margin-bottom: 8px; }
+    .chart-wrap { position: relative; height: 200px; }
+
+    /* DOW week nav */
+    .dow-header {
+      display: flex; align-items: center;
+      justify-content: space-between; flex-wrap: wrap;
+      gap: 4px; margin-bottom: 4px;
+    }
+    .week-toggle {
+      display: flex; align-items: center; gap: 4px;
+      font-size: 11px; font-weight: 600; color: #64748b;
+      text-transform: uppercase; letter-spacing: .05em; cursor: pointer;
+    }
+    .week-toggle input { margin: 0; }
+    .week-nav {
+      display: none; align-items: center; gap: 6px;
+      font-size: 11px; color: #475569; margin-bottom: 4px; flex-wrap: wrap;
+    }
+    #weekLabel { font-weight: 600; }
+    .btn-nav {
+      width: 22px; height: 22px;
+      background: #f1f5f9; border: 1px solid #cbd5e1;
+      border-radius: 4px; font-size: 13px; cursor: pointer;
+      display:flex; align-items:center; justify-content:center; line-height:1;
+    }
+    .btn-nav:hover:not(:disabled) { background: #e2e8f0; }
+    .btn-nav:disabled { opacity: .4; cursor: default; }
+
+    /* ── Year chart ── */
+    #yearCard {
+      background: #fff; border-radius: 10px;
+      box-shadow: 0 1px 3px rgba(0,0,0,.08);
+      padding: 14px 16px; margin-bottom: 14px;
+    }
+    .year-top { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; margin-bottom: 6px; }
+    #yearWrap { position: relative; height: 220px; }
+
+    .year-range-row {
+      display: flex; align-items: center; gap: 8px;
+      flex-wrap: wrap; margin-top: 8px;
+      padding-top: 8px; border-top: 1px solid #f1f5f9;
+      font-size: 11px; font-weight: 600;
+      color: #64748b; text-transform: uppercase; letter-spacing: .05em;
+    }
+    .year-range-row input[type="date"] {
+      padding: 5px 8px;
+      border: 1px solid #cbd5e1; border-radius: 6px;
+      font: inherit; font-size: 12px; color: #1e293b; background: #fff;
+    }
+    .year-range-row input[type="date"]:focus { outline: 2px solid #3b82f6; border-color: transparent; }
+    .range-sep { color: #94a3b8; }
+    #btnResetRange {
+      padding: 5px 10px;
+      background: #f1f5f9; border: 1px solid #cbd5e1;
+      border-radius: 5px; font: 600 11px/1 inherit;
+      color: #64748b; cursor: pointer;
+    }
+    #btnResetRange:hover { background: #e2e8f0; }
+
+    /* ── Advanced ── */
+    #btnAdvToggle { cursor: pointer; user-select: none; display: flex; align-items: center; gap: 6px; margin-bottom: 0; }
+    #btnAdvToggle:hover { color: #475569; }
+    #advPanel { margin-top: 14px; }
+
+    .adv-section { margin-bottom: 16px; }
+    .adv-section:last-child { margin-bottom: 0; }
+    .adv-title {
+      font-size: 11px; font-weight: 700;
+      text-transform: uppercase; letter-spacing: .06em;
+      color: #94a3b8; margin-bottom: 8px;
+    }
+    .monthly-inputs-grid {
+      display: grid; grid-template-columns: repeat(6,1fr);
+      gap: 6px; margin-bottom: 8px;
+    }
+    @media (max-width:700px) { .monthly-inputs-grid { grid-template-columns: repeat(4,1fr); } }
+    .mi-cell { display: flex; flex-direction: column; gap: 2px; }
+    .mi-month { font-size:10px; font-weight:600; color:#94a3b8; text-transform:uppercase; text-align:center; }
+    .mi-input { width:100%; padding:5px 6px; border:1px solid #cbd5e1; border-radius:5px; font:inherit; font-size:12px; text-align:right; }
+    .mi-input:focus { outline:2px solid #3b82f6; border-color:transparent; }
+
+    .adv-btns { display: flex; gap: 8px; }
+    .btn-sm {
+      padding: 6px 12px; border-radius: 6px;
+      font: 600 12px/1 inherit; cursor: pointer;
+      border: 1px solid #cbd5e1; background: #f8fafc; color: #475569;
+    }
+    .btn-sm:hover { background: #e2e8f0; }
+    .btn-sm.primary { background: #3b82f6; color: #fff; border-color: transparent; }
+    .btn-sm.primary:hover { background: #2563eb; }
+
+    .baseload-row { display: flex; align-items: center; gap: 10px; }
+    #baseloadSlider { flex: 1; max-width: 240px; }
+    #baseloadLabel { font-size: 13px; font-weight: 600; min-width: 32px; }
+    .baseload-desc { font-size: 11px; color: #94a3b8; margin-top: 4px; }
+
+    .vac-table { width: 100%; border-collapse: collapse; margin-bottom: 8px; }
+    .vac-table th { font-size:10px; font-weight:700; text-transform:uppercase; letter-spacing:.05em; color:#94a3b8; text-align:left; padding:4px 6px 6px; }
+    .vac-table td { padding: 3px 4px; }
+    .vac-table input[type="date"]   { padding:4px 6px; border:1px solid #cbd5e1; border-radius:5px; font:inherit; font-size:12px; width:120px; }
+    .vac-table input[type="number"] { padding:4px 6px; border:1px solid #cbd5e1; border-radius:5px; font:inherit; font-size:12px; width:64px; text-align:right; }
+    .vac-table input:focus { outline:2px solid #3b82f6; border-color:transparent; }
+    .btn-del-vac { background:none; border:none; color:#94a3b8; cursor:pointer; font-size:13px; padding:2px 5px; border-radius:4px; }
+    .btn-del-vac:hover { background:#fee2e2; color:#ef4444; }
+
+    .holidays-row { display:flex; align-items:center; gap:6px; font-size:13px; color:#475569; }
+    .holidays-row input { width:15px; height:15px; cursor:pointer; }
+
+    /* ── Import ── */
+    .import-row { display:flex; gap:10px; align-items:center; flex-wrap:wrap; margin-bottom:8px; }
+    .import-row label.btn-sm { display:inline-block; cursor:pointer; }
+    #fileInput { display:none; }
+    #importStatus { font-size:12px; color:#475569; }
+    #importStatus.ok  { color:#059669; }
+    #importStatus.err { color:#dc2626; }
+    #btnClearMeasured { padding:6px 12px; border-radius:6px; font:600 12px/1 inherit; cursor:pointer; border:1px solid #fca5a5; background:#fef2f2; color:#dc2626; }
+    #btnClearMeasured:hover { background:#fee2e2; }
+
+    /* ── Year legend ── */
+    .year-legend { display:flex; gap:14px; align-items:center; font-size:11px; color:#64748b; }
+    .year-legend span { display:flex; align-items:center; gap:5px; }
+    .leg-dot { width:10px; height:10px; border-radius:2px; flex-shrink:0; }
+
+    /* ── Export ── */
+    .export-row { display:flex; gap:10px; align-items:center; flex-wrap:wrap; }
+    #btnCSV { padding:8px 18px; background:#10b981; color:#fff; border:none; border-radius:6px; font:600 13px/1 inherit; cursor:pointer; }
+    #btnCSV:hover { background:#059669; }
+    .export-note { font-size:11px; color:#94a3b8; }
+  </style>
+</head>
+<body>
+
+<header>Generátor spotřebních profilů energie</header>
+
+<div class="main">
+
+  <!-- ── Context bar ── -->
+  <div class="ctx-bar">
+    <div class="ctx-field">
+      Médium
+      <select id="medium">
+        <option value="electricity">Elektřina</option>
+        <option value="gas">Plyn</option>
+        <option value="heat">Teplo (CZT)</option>
+        <option value="water">Voda</option>
+      </select>
+    </div>
+    <div class="ctx-field">
+      Jednotka
+      <select id="unitSelect"></select>
+    </div>
+    <div class="ctx-field">
+      Roční spotřeba
+      <div class="annual-wrap">
+        <input type="number" id="annual" placeholder="např. 120" min="0" step="1">
+        <span id="unitLabel">MWh</span>
+      </div>
+    </div>
+    <div class="ctx-field">
+      Rok
+      <select id="yearSelect">
+        <option>2023</option>
+        <option>2024</option>
+        <option value="2025" selected>2025</option>
+        <option>2026</option>
+        <option>2027</option>
+        <option>2028</option>
+        <option>2029</option>
+        <option>2030</option>
+      </select>
+    </div>
+  </div>
+
+  <!-- ── Chat ── -->
+  <div class="card" id="chatCard">
+    <div class="card-title">Konverzace s AI</div>
+    <div class="chat-hint">Popište objekt — AI se doptá na provoz, plochu, uživatele a vybavení, pak vygeneruje profil. Ctrl+Enter = odeslat.</div>
+    <div id="chatMessages" class="chat-messages"></div>
+    <div class="chat-input-row">
+      <textarea id="chatInput" placeholder="Napište zprávu…" rows="2"></textarea>
+      <button id="btnChatSend">Odeslat</button>
+    </div>
+  </div>
+
+  <!-- ── Four charts ── -->
+  <div class="charts-row">
+    <div class="chart-card">
+      <div class="chart-title">Měsíční distribuce</div>
+      <div class="chart-hint">Táhni sloupce pro úpravu</div>
+      <div class="chart-wrap"><canvas id="chartMonthly"></canvas></div>
+    </div>
+    <div class="chart-card">
+      <div class="dow-header">
+        <span class="chart-title" style="margin-bottom:0">Den v týdnu</span>
+        <label class="week-toggle"><input type="checkbox" id="chkWeekMode"> Jen tento týden</label>
+      </div>
+      <div class="week-nav" id="weekNav">
+        <button class="btn-nav" id="btnPrevWeek">‹</button>
+        <span id="weekLabel">Týden 1</span>
+        <button class="btn-nav" id="btnNextWeek">›</button>
+      </div>
+      <div class="chart-hint">Táhni sloupce pro úpravu</div>
+      <div class="chart-wrap"><canvas id="chartDow"></canvas></div>
+    </div>
+    <div class="chart-card">
+      <div class="chart-title">Hodinový profil — pracovní den</div>
+      <div class="chart-hint">Táhni body pro úpravu</div>
+      <div class="chart-wrap"><canvas id="chartHourly"></canvas></div>
+    </div>
+    <div class="chart-card">
+      <div class="chart-title">Hodinový profil — volný den</div>
+      <div class="chart-hint">Táhni body pro úpravu</div>
+      <div class="chart-wrap"><canvas id="chartHourlyNW"></canvas></div>
+    </div>
+  </div>
+
+  <!-- ── Year chart ── -->
+  <div id="yearCard">
+    <div class="year-top">
+      <div class="chart-title" style="margin-bottom:0">Roční průběh spotřeby</div>
+      <div class="year-legend" id="legendMeasured" style="display:none">
+        <span><span class="leg-dot" style="background:#6366f1"></span>Model</span>
+        <span><span class="leg-dot" style="background:#10b981"></span>Naměřeno</span>
+      </div>
+    </div>
+    <div id="yearWrap"><canvas id="chartYear"></canvas></div>
+    <div class="year-range-row">
+      Od <input type="date" id="yearFrom">
+      <span class="range-sep">—</span>
+      Do <input type="date" id="yearTo">
+      <button id="btnResetRange">Celý rok</button>
+    </div>
+  </div>
+
+  <!-- ── Advanced settings ── -->
+  <div class="card">
+    <div class="card-title" id="btnAdvToggle">Rozšířená nastavení <span id="advIcon">▸</span></div>
+    <div id="advPanel" style="display:none">
+
+      <div class="adv-section">
+        <div class="adv-title">Zadané měsíční spotřeby (přepíší distribuci od AI)</div>
+        <div class="monthly-inputs-grid" id="monthlyInputsGrid"></div>
+        <div class="adv-btns">
+          <button class="btn-sm primary" id="btnApplyMonthly">Použít</button>
+          <button class="btn-sm" id="btnClearMonthly">Vymazat</button>
+        </div>
+      </div>
+
+      <div class="adv-section">
+        <div class="adv-title">Základní zatížení (baseload)</div>
+        <div class="baseload-row">
+          <input type="range" id="baseloadSlider" min="0" max="50" value="0" step="1">
+          <span id="baseloadLabel">0 %</span>
+        </div>
+        <div class="baseload-desc">Minimální spotřeba i mimo špičku — tvaruje profil bez změny celkového objemu.</div>
+      </div>
+
+      <div class="adv-section">
+        <div class="adv-title">Období útlumu / prázdnin / odstávek</div>
+        <table class="vac-table">
+          <thead><tr><th>Od</th><th>Do</th><th>Faktor zátěže</th><th></th></tr></thead>
+          <tbody id="vacationsTbody"></tbody>
+        </table>
+        <button class="btn-sm" id="btnAddVacation">+ Přidat období</button>
+      </div>
+
+      <div class="adv-section">
+        <label class="holidays-row">
+          <input type="checkbox" id="chkHolidays" checked>
+          Státní svátky jako volný den (použít profil „volný den")
+        </label>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ── Import naměřených dat ── -->
+  <div class="card" id="importCard">
+    <div class="card-title">Import naměřených dat</div>
+    <div class="import-row">
+      <label class="btn-sm" for="fileInput">📂 Nahrát CSV / XLSX</label>
+      <input type="file" id="fileInput" accept=".csv,.txt">
+      <button id="btnClearMeasured" style="display:none">✕ Vymazat naměřená data</button>
+    </div>
+    <div id="importStatus"></div>
+    <div style="font-size:11px;color:#94a3b8;margin-top:6px">
+      Podporovaný formát: hodinová nebo čtvrthodinová data, sloupce Datum&amp;čas + Spotřeba. Naměřená data překryjí model (zeleně) a zkalibrují měsíční distribuci a hodinové tvary.
+    </div>
+  </div>
+
+  <!-- ── Export ── -->
+  <div class="card" id="exportSection">
+    <div class="card-title">Export</div>
+    <div class="export-row">
+      <button id="btnCSV">⬇ Stáhnout CSV (8 760 hodin)</button>
+      <span class="export-note">Sloupce: Datum a čas · Spotřeba [jednotka/h] &nbsp;·&nbsp; Bez zadané roční spotřeby se exportují relativní hodnoty</span>
+    </div>
+  </div>
+
+</div>
+
+<script src="js/app.js"></script>
+</body>
+</html>

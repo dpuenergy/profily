@@ -1,0 +1,10 @@
+{
+  "dependencies": {
+    "connect-timeout": "^1.9.1",
+    "express-rate-limit": "^8.1.0",
+    "helmet": "^8.1.0"
+  },
+  "devDependencies": {
+    "prettier": "^3.6.2"
+  }
+}
