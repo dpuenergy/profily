@@ -1,0 +1,12 @@
+[build]
+  publish = "web"
+
+[functions]
+  directory = "netlify/functions"
+  node_bundler = "esbuild"
+
+# /api/chat → Netlify Function
+[[redirects]]
+  from = "/api/chat"
+  to = "/.netlify/functions/chat"
+  status = 200
